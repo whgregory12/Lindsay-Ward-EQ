@@ -1,8 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { UserPlus, Search, Briefcase, Wrench, User, Loader2, Database, Users, Trash2, Filter, AlertCircle } from 'lucide-react';
+
+const rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
+let firebaseConfig = {};
+
+try {
+  firebaseConfig = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+} catch (e) {
+  console.error("Firebase Config Error", e);
+}
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = 'talent-directory-app';
+
+export default function App() {
+  // DO NOT DELETE ANYTHING BELOW THIS LINE
+  const [user, setUser] = useState(null);
+  // ... rest of the code
 
 const firebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG || '{}');
 const app = initializeApp(firebaseConfig);
