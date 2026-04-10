@@ -4,11 +4,11 @@ import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc } f
 import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { UserPlus, Search, Briefcase, Wrench, User, Loader2, Database, Users, Trash2, Filter, AlertCircle } from 'lucide-react';
 
-const firebaseConfig = JSON.parse(__firebase_config);
+const firebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG || '{}');
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'talent-directory-app';
+const appId = 'talent-directory-app';
 
 export default function App() {
     const [user, setUser] = useState(null);
