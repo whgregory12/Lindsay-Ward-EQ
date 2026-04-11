@@ -29,10 +29,11 @@ export default function App() {
     const [formData, setFormData] = useState({ name: '', profession: '', skills: '' });
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Authentication Setup
+   // Simplified Authentication Setup
     useEffect(() => {
         const initAuth = async () => {
             try {
+                // Just sign in anonymously - no extra tokens needed
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Auth error:", error);
@@ -43,6 +44,9 @@ export default function App() {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
             setUser(u);
         });
+
+        return () => unsubscribe();
+    }, []);
 
         return () => unsubscribe();
     }, []);
