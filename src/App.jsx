@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { UserPlus, Search, Briefcase, User, Loader2, Database, Users, Trash2 } from 'lucide-react';
+import { UserPlus, Search, Briefcase, User, Loader2, Database, Users, Trash2, X } from 'lucide-react';
 
 const rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
 let firebaseConfig = {};
@@ -87,7 +87,8 @@ export default function App() {
     };
 
     const filteredProfiles = useMemo(() => {
-        const q = searchQuery.toLowerCase();
+        const q = searchQuery.toLowerCase().trim();
+        if (!q) return profiles;
         return profiles.filter(p => 
             p.name?.toLowerCase().includes(q) || 
             p.profession?.toLowerCase().includes(q) || 
@@ -102,11 +103,11 @@ export default function App() {
             <div className="max-w-7xl mx-auto">
                 {deleteId && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-                            <h3 className="text-lg font-bold text-red-600 mb-4">Confirm Deletion</h3>
+                        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+                            <h3 className="text-lg font-bold text-red-600 mb-4 text-center text-balance">Remove this profile?</h3>
                             <div className="flex gap-3">
-                                <button onClick={() => setDeleteId(null)} className="flex-1 py-2 rounded-lg bg-slate-100">Cancel</button>
-                                <button onClick={confirmDelete} className="flex-1 py-2 rounded-lg bg-red-600 text-white">Delete</button>
+                                <button onClick={() => setDeleteId(null)} className="flex-1 py-2 rounded-lg bg-slate-100 font-bold">Cancel</button>
+                                <button onClick={confirmDelete} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-bold">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -119,7 +120,12 @@ export default function App() {
                     </div>
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input type="text" placeholder="Search professions or skills..." className="w-full pl-10 pr-4 py-3 bg-white border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <input type="text" placeholder="Search professions or skills..." className="w-full pl-10 pr-10 py-3 bg-white border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <X size={18} />
+                            </button>
+                        )}
                     </div>
                 </header>
 
@@ -141,15 +147,21 @@ export default function App() {
 
                     {/* MIDDLE: CARDS */}
                     <div className="lg:col-span-6">
+                        {searchQuery && (
+                            <div className="mb-4 flex items-center gap-2 text-slate-500 text-sm">
+                                <span>Filtering by: <b>"{searchQuery}"</b></span>
+                                <button onClick={() => setSearchQuery('')} className="text-blue-600 font-bold hover:underline underline-offset-4 decoration-2">Clear</button>
+                            </div>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredProfiles.map((profile) => (
-                                <div key={profile.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative hover:shadow-md transition-all">
-                                    <button onClick={() => setDeleteId(profile.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500"><Trash2 size={18} /></button>
+                                <div key={profile.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative hover:shadow-md transition-all group">
+                                    <button onClick={() => setDeleteId(profile.id)} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
                                     <h3 className="text-xl font-bold text-slate-800">{profile.name}</h3>
                                     <p className="text-blue-600 text-sm font-bold mb-4">{profile.profession}</p>
                                     <div className="flex flex-wrap gap-1.5 border-t border-slate-50 pt-4">
                                         {profile.skills?.map((skill, idx) => (
-                                            <span key={idx} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold uppercase tracking-wider">{skill}</span>
+                                            <button key={idx} onClick={() => setSearchQuery(skill)} className="text-[10px] bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors">{skill}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -163,10 +175,14 @@ export default function App() {
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Briefcase size={14} /> Professions</h2>
                             <div className="space-y-2">
                                 {filterStats.professions.map(([name, count]) => (
-                                    <div key={name} className="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-                                        <span className="text-sm font-bold text-slate-700">{name}</span>
-                                        <span className="bg-blue-600 px-2 py-0.5 rounded text-[10px] font-black text-white">{count}</span>
-                                    </div>
+                                    <button 
+                                        key={name} 
+                                        onClick={() => setSearchQuery(name)}
+                                        className={`w-full flex justify-between items-center px-3 py-2 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-blue-300'}`}
+                                    >
+                                        <span className="text-sm font-bold">{name}</span>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${searchQuery === name ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>{count}</span>
+                                    </button>
                                 ))}
                             </div>
                         </div>
@@ -174,9 +190,13 @@ export default function App() {
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Database size={14} /> Skills</h2>
                             <div className="flex flex-wrap gap-2">
                                 {filterStats.skills.map(([name, count]) => (
-                                    <div key={name} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-100">
-                                        {name} <span className="opacity-50">{count}</span>
-                                    </div>
+                                    <button 
+                                        key={name} 
+                                        onClick={() => setSearchQuery(name)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100'}`}
+                                    >
+                                        {name} <span className="opacity-60">{count}</span>
+                                    </button>
                                 ))}
                             </div>
                         </div>
