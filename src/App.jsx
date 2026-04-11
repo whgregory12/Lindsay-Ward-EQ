@@ -190,7 +190,6 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           <div className="lg:col-span-4 space-y-6">
-            {/* ADD PROFILE FORM */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <div className="flex items-center gap-2 mb-6 text-blue-600"><UserPlus size={20} /><h2 className="text-xl font-bold text-slate-800">Add Profile</h2></div>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -203,7 +202,6 @@ export default function App() {
                   <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
                 </div>
                 
-                {/* HOMETOWN ROW */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">City</label>
@@ -232,30 +230,55 @@ export default function App() {
               </form>
             </div>
 
-            {/* QUICK FILTER TALLY */}
             <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-700">
-              <div className="flex items-center gap-2 mb-4 text-blue-400 font-bold"><Filter size={18} /> Quick Filter</div>
-              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
+              <div className="flex items-center gap-2 mb-6 text-blue-400 font-bold"><Filter size={18} /> Quick Filter</div>
+              <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                
                 {[
                   { label: 'Professions', data: filterStats.professions },
                   { label: 'Hometowns', data: filterStats.hometowns },
                   { label: 'Colleges', data: filterStats.colleges }
                 ].map(sec => (
-                  <div key={sec.label}>
-                    <p className="text-[10px] text-slate-500 font-black uppercase mb-2 tracking-widest">{sec.label}</p>
-                    {sec.data.slice(0, 10).map(([name, count]) => (
-                      <button key={name} onClick={() => setSearchQuery(name)} className="flex justify-between w-full text-xs py-1.5 hover:text-blue-400 transition-colors border-b border-slate-800 last:border-0">
-                        <span className="truncate">{name}</span><span className="bg-slate-800 text-slate-400 px-2 rounded font-mono">{count}</span>
+                  <div key={sec.label} className="mb-4">
+                    <p className="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-widest">{sec.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {sec.data.map(([name, count]) => (
+                        <button 
+                          key={name} 
+                          onClick={() => setSearchQuery(name)} 
+                          className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
+                        >
+                          {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <div>
+                  <p className="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-widest">Skills & Hobbies</p>
+                  <div className="flex flex-wrap gap-2">
+                    {filterStats.skills.map(([name, count]) => (
+                      <button 
+                        key={name} 
+                        onClick={() => setSearchQuery(name)} 
+                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
+                      >
+                        {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
                       </button>
                     ))}
                   </div>
-                ))}
-                <div>
-                  <p className="text-[10px] text-slate-500 font-black uppercase mb-2 tracking-widest">Skills</p>
-                  <div className="flex flex-wrap gap-1.5">{filterStats.skills.map(([name]) => (<button key={name} onClick={() => setSearchQuery(name)} className="text-[10px] bg-slate-800 px-2 py-1 rounded hover:bg-blue-600 transition-colors">{name}</button>))}</div>
                 </div>
               </div>
-              {searchQuery && <button onClick={() => setSearchQuery('')} className="mt-6 w-full text-[10px] border border-blue-500/30 text-blue-400 py-2 rounded font-bold hover:bg-blue-500/10">CLEAR ALL FILTERS</button>}
+              
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')} 
+                  className="mt-6 w-full text-[10px] border border-blue-500/30 text-blue-400 py-3 rounded-lg font-bold hover:bg-blue-500/10 transition-all uppercase tracking-widest"
+                >
+                  Clear All Filters
+                </button>
+              )}
             </div>
           </div>
 
