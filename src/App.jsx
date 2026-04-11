@@ -145,35 +145,65 @@ export default function App() {
                     </div>
                 </header>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-4">
-                        <div className="bg-white p-6 rounded-2xl border shadow-sm">
-                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><UserPlus size={20} /> Add Profile</h2>
+                    {/* LEFT COLUMN: Add Profile Form */}
+                    <div className="lg:col-span-3">
+                        <div className="bg-white p-6 rounded-2xl border shadow-sm sticky top-8">
+                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800"><UserPlus size={20} /> Add Profile</h2>
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <input required className="w-full p-2.5 border rounded-lg" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                                <input required className="w-full p-2.5 border rounded-lg" placeholder="Profession" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
-                                <textarea required className="w-full p-2.5 border rounded-lg h-24" placeholder="Skills (comma separated)" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
-                                <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">
+                                <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                                <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Profession" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
+                                <textarea required className="w-full p-2.5 border rounded-lg h-24 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Skills (comma separated)" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200">
                                     {submitting ? "Publishing..." : "Publish Profile"}
                                 </button>
                             </form>
                         </div>
                     </div>
-                    <div className="lg:col-span-8">
+
+                    {/* MIDDLE COLUMN: The Profiles */}
+                    <div className="lg:col-span-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredProfiles.map((profile) => (
-                                <div key={profile.id} className="bg-white p-5 rounded-2xl border relative group">
-                                    <button onClick={() => setDeleteId(profile.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500"><Trash2 size={18} /></button>
+                                <div key={profile.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative hover:shadow-md transition-shadow">
+                                    <button onClick={() => setDeleteId(profile.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                                     <h3 className="text-xl font-bold text-slate-800">{profile.name}</h3>
                                     <p className="text-blue-600 text-sm font-semibold mb-4">{profile.profession}</p>
-                                    <div className="flex flex-wrap gap-1.5 border-t pt-4">
+                                    <div className="flex flex-wrap gap-1.5 border-t border-slate-50 pt-4">
                                         {profile.skills?.map((skill, idx) => (
-                                            <span key={idx} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-1 rounded-md">{skill}</span>
+                                            <span key={idx} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-medium">{skill}</span>
                                         ))}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
+
+                    {/* RIGHT COLUMN: The Tally Bar */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Briefcase size={16} /> Professions</h2>
+                            <div className="space-y-3">
+                                {filterStats.professions.map(([name, count]) => (
+                                    <div key={name} className="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg">
+                                        <span className="text-sm font-medium text-slate-700">{name}</span>
+                                        <span className="bg-white px-2 py-0.5 rounded-md text-xs font-bold text-blue-600 border shadow-sm">{count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Database size={16} /> Skills</h2>
+                            <div className="flex flex-wrap gap-2">
+                                {filterStats.skills.map(([name, count]) => (
+                                    <div key={name} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-100">
+                                        {name} <span>{count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
