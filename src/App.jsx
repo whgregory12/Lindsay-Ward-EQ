@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { UserPlus, Search, Briefcase, User, Loader2, Database, Users, Trash2, X } from 'lucide-react';
+import { UserPlus, Search, Briefcase, User, Loader2, Database, Users, Trash2, X, Heart } from 'lucide-react';
 
 const rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
 let firebaseConfig = {};
@@ -104,7 +104,7 @@ export default function App() {
                 {deleteId && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-                            <h3 className="text-lg font-bold text-red-600 mb-4 text-center text-balance">Remove this profile?</h3>
+                            <h3 className="text-lg font-bold text-red-600 mb-4 text-center">Remove this profile?</h3>
                             <div className="flex gap-3">
                                 <button onClick={() => setDeleteId(null)} className="flex-1 py-2 rounded-lg bg-slate-100 font-bold">Cancel</button>
                                 <button onClick={confirmDelete} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-bold">Delete</button>
@@ -115,14 +115,14 @@ export default function App() {
                 
                 <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-slate-800 tracking-tight">Lindsay Ward EQ</h1>
+                        <h1 className="text-4xl font-black text-slate-800 tracking-tight text-balance">Lindsay Ward EQ</h1>
                         <p className="text-slate-500 font-medium flex items-center gap-2 mt-2"><Users size={18} /> {profiles.length} Profiles</p>
                     </div>
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input type="text" placeholder="Search professions or skills..." className="w-full pl-10 pr-10 py-3 bg-white border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <input type="text" placeholder="Search hobbies, skills, or professions..." className="w-full pl-10 pr-10 py-3 bg-white border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                         {searchQuery && (
-                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                                 <X size={18} />
                             </button>
                         )}
@@ -135,9 +135,18 @@ export default function App() {
                         <div className="bg-white p-6 rounded-2xl border shadow-sm sticky top-8">
                             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800"><UserPlus size={20} /> Add Profile</h2>
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                                <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Profession" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
-                                <textarea required className="w-full p-2.5 border rounded-lg h-24 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Skills (comma separated)" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Name</label>
+                                    <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Joseph Smith" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Profession</label>
+                                    <input required className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1 text-balance leading-tight block">Hobbies, Skills, Interests</label>
+                                    <textarea required className="w-full p-2.5 border rounded-lg h-24 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Revelation, Translating, Stick Pull" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                                </div>
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-100">
                                     {submitting ? "Publishing..." : "Publish Profile"}
                                 </button>
@@ -149,8 +158,8 @@ export default function App() {
                     <div className="lg:col-span-6">
                         {searchQuery && (
                             <div className="mb-4 flex items-center gap-2 text-slate-500 text-sm">
-                                <span>Filtering by: <b>"{searchQuery}"</b></span>
-                                <button onClick={() => setSearchQuery('')} className="text-blue-600 font-bold hover:underline underline-offset-4 decoration-2">Clear</button>
+                                <span>Filtering: <b>"{searchQuery}"</b></span>
+                                <button onClick={() => setSearchQuery('')} className="text-blue-600 font-bold">Clear</button>
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -175,11 +184,7 @@ export default function App() {
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Briefcase size={14} /> Professions</h2>
                             <div className="space-y-2">
                                 {filterStats.professions.map(([name, count]) => (
-                                    <button 
-                                        key={name} 
-                                        onClick={() => setSearchQuery(name)}
-                                        className={`w-full flex justify-between items-center px-3 py-2 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-blue-300'}`}
-                                    >
+                                    <button key={name} onClick={() => setSearchQuery(name)} className={`w-full flex justify-between items-center px-3 py-2 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-blue-300'}`}>
                                         <span className="text-sm font-bold">{name}</span>
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-black ${searchQuery === name ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>{count}</span>
                                     </button>
@@ -187,14 +192,10 @@ export default function App() {
                             </div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border shadow-sm">
-                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Database size={14} /> Skills</h2>
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Heart size={14} /> Hobbies & Interests</h2>
                             <div className="flex flex-wrap gap-2">
                                 {filterStats.skills.map(([name, count]) => (
-                                    <button 
-                                        key={name} 
-                                        onClick={() => setSearchQuery(name)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100'}`}
-                                    >
+                                    <button key={name} onClick={() => setSearchQuery(name)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100'}`}>
                                         {name} <span className="opacity-60">{count}</span>
                                     </button>
                                 ))}
