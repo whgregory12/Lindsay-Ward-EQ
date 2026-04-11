@@ -25,7 +25,9 @@ import {
   Users,
   Trash2,
   Filter,
-  AlertCircle
+  AlertCircle,
+  MapPin,
+  GraduationCap
 } from 'lucide-react';
 
 // --- DATABASE & AUTH CONFIGURATION ---
@@ -54,6 +56,8 @@ export default function App() {
   const [formData, setFormData] = useState({
     name: '',
     profession: '',
+    hometown: '',
+    college: '',
     skills: ''
   });
   
@@ -125,12 +129,14 @@ export default function App() {
       await addDoc(profilesRef, {
         name: formData.name,
         profession: formData.profession.trim(),
+        hometown: formData.hometown.trim(),
+        college: formData.college.trim(),
         skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== ''),
         createdAt: Date.now(),
         userId: user.uid
       });
       
-      setFormData({ name: '', profession: '', skills: '' });
+      setFormData({ name: '', profession: '', hometown: '', college: '', skills: '' });
     } catch (error) {
       console.error("Error adding profile:", error);
     } finally {
@@ -165,7 +171,9 @@ export default function App() {
       const nameMatch = profile.name?.toLowerCase().includes(queryLower);
       const profMatch = profile.profession?.toLowerCase().includes(queryLower);
       const skillMatch = profile.skills?.some(skill => skill.toLowerCase().includes(queryLower));
-      return nameMatch || profMatch || skillMatch;
+      const homeMatch = profile.hometown?.toLowerCase().includes(queryLower);
+      const collegeMatch = profile.college?.toLowerCase().includes(queryLower);
+      return nameMatch || profMatch || skillMatch || homeMatch || collegeMatch;
     });
   }, [profiles, searchQuery]);
 
@@ -189,10 +197,10 @@ export default function App() {
                 <AlertCircle size={24} />
                 <h3 className="text-lg font-bold">Confirm Deletion</h3>
               </div>
-              <p className="text-slate-600 mb-6">Are you sure you want to remove this profile? You will need the admin password.</p>
+              <p className="text-slate-600 mb-6">Are you sure you want to remove this profile? Password required.</p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteId(null)} className="flex-1 py-2 rounded-lg bg-slate-100 font-semibold transition-colors">Cancel</button>
-                <button onClick={confirmDelete} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-semibold transition-colors">Delete</button>
+                <button onClick={() => setDeleteId(null)} className="flex-1 py-2 rounded-lg bg-slate-100 font-semibold">Cancel</button>
+                <button onClick={confirmDelete} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-semibold">Delete</button>
               </div>
             </div>
           </div>
@@ -212,37 +220,17 @@ export default function App() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
               <input 
                 type="text"
-                placeholder="Search by name, profession or skills..."
+                placeholder="Search name, job, hometown, or skills..."
                 className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-
-            <div className="relative flex items-center">
-              <Filter className="absolute left-3 text-slate-400 pointer-events-none" size={16} />
-              <select 
-                className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              >
-                <option value="">Filter by Type...</option>
-                <optgroup label="Professions">
-                  {filterStats.professions.map(([name, count]) => (
-                    <option key={name} value={name}>{name} ({count})</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Hobbies & Skills">
-                  {filterStats.skills.map(([name, count]) => (
-                    <option key={name} value={name}>{name} ({count})</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
           </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Registration Form */}
           <div className="lg:col-span-4">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-8">
               <div className="flex items-center gap-2 mb-6 text-blue-600">
@@ -251,9 +239,31 @@ export default function App() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Joseph Smith" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                <input required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
-                <textarea required rows="3" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Revelation, Stick Pull, Translation" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+                  <input required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Joseph Smith" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Profession</label>
+                  <input required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Hometown</label>
+                  <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Sharon, Vermont" value={formData.hometown} onChange={(e) => setFormData({...formData, hometown: e.target.value})} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">College</label>
+                  <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="School of the Prophets" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Hobbies & Skills</label>
+                  <textarea required rows="3" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Revelation, Stick Pull, Translation" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                </div>
+
                 <button disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                   {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Publish Profile'}
                 </button>
@@ -261,17 +271,41 @@ export default function App() {
             </div>
           </div>
 
+          {/* Directory Display */}
           <div className="lg:col-span-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredProfiles.map((profile) => (
                 <div key={profile.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all group flex flex-col h-full relative">
                   <button onClick={() => setDeleteId(profile.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={18} /></button>
+                  
                   <h3 className="text-xl font-bold text-slate-800 mb-1">{profile.name}</h3>
-                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-4"><Briefcase size={14} />{profile.profession}</div>
+                  
+                  <div className="flex items-center gap-2 text-blue-600 text-sm font-semibold mb-2">
+                    <Briefcase size={14} />
+                    {profile.profession}
+                  </div>
+
+                  <div className="space-y-1 mb-4">
+                    {profile.hometown && (
+                      <div className="flex items-center gap-2 text-slate-500 text-xs">
+                        <MapPin size={12} />
+                        {profile.hometown}
+                      </div>
+                    )}
+                    {profile.college && (
+                      <div className="flex items-center gap-2 text-slate-500 text-xs">
+                        <GraduationCap size={12} />
+                        {profile.college}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-start gap-2 pt-4 border-t border-slate-50 mt-auto">
                     <Wrench size={14} className="text-slate-400 mt-1 flex-shrink-0" />
                     <div className="flex flex-wrap gap-1.5">
-                      {profile.skills?.map((skill, idx) => (<span key={idx} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 font-medium">{skill}</span>))}
+                      {profile.skills?.map((skill, idx) => (
+                        <span key={idx} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 font-medium">{skill}</span>
+                      ))}
                     </div>
                   </div>
                 </div>
