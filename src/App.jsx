@@ -27,7 +27,11 @@ import {
   Filter,
   AlertCircle,
   MapPin,
-  GraduationCap
+  GraduationCap,
+  Share,
+  PlusSquare,
+  X,
+  Download
 } from 'lucide-react';
 
 // --- DATABASE & AUTH CONFIGURATION ---
@@ -52,7 +56,6 @@ const STATES = [
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
 ];
 
-// Helper to clean up text (Title Case)
 const clean = (str) => {
   if (!str) return "";
   return str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -65,21 +68,45 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState(null); 
   
+  // Install Prompt State
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [platform, setPlatform] = useState('other');
+
   const [formData, setFormData] = useState({
-    name: '',
-    profession: '',
-    homeCity: '',
-    homeState: '',
-    college: '',
-    skill1: '',
-    skill2: '',
-    skill3: '',
-    skill4: '',
-    skill5: '',
-    skill6: ''
+    name: '', profession: '', homeCity: '', homeState: '', college: '',
+    skill1: '', skill2: '', skill3: '', skill4: '', skill5: '', skill6: ''
   });
   
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 1. Detection for Install Banner
+  useEffect(() => {
+    // Detect iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIOS && !isStandalone) {
+      setPlatform('ios');
+      setShowInstallBanner(true);
+    }
+
+    // Detect Android / Chrome
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setPlatform('android');
+      setShowInstallBanner(true);
+    });
+  }, []);
+
+  const handleAndroidInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setShowInstallBanner(false);
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -103,23 +130,19 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  // Generate Filter Tally Stats
   const filterStats = useMemo(() => {
     const stats = { professions: {}, skills: {}, hometowns: {}, colleges: {} };
-    
     profiles.forEach(p => {
       const prof = clean(p.profession);
       const coll = clean(p.college);
       const city = clean(p.homeCity);
       const state = p.homeState;
-
       if (prof) stats.professions[prof] = (stats.professions[prof] || 0) + 1;
       if (coll) stats.colleges[coll] = (stats.colleges[coll] || 0) + 1;
       if (city && state) {
         const h = `${city}, ${state}`;
         stats.hometowns[h] = (stats.hometowns[h] || 0) + 1;
       }
-      
       if (p.skills && Array.isArray(p.skills)) {
         p.skills.forEach(s => { 
           const cleanedSkill = clean(s);
@@ -127,7 +150,6 @@ export default function App() {
         });
       }
     });
-
     const sort = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
     return {
       professions: sort(stats.professions),
@@ -141,33 +163,17 @@ export default function App() {
     e.preventDefault();
     if (!formData.name || !formData.profession || !user) return;
     setSubmitting(true);
-    
-    const skillList = [
-      formData.skill1, formData.skill2, formData.skill3, 
-      formData.skill4, formData.skill5, formData.skill6
-    ].map(s => s.trim()).filter(s => s !== '');
-
+    const skillList = [formData.skill1, formData.skill2, formData.skill3, formData.skill4, formData.skill5, formData.skill6].map(s => s.trim()).filter(s => s !== '');
     try {
-      const profilesRef = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
-      await addDoc(profilesRef, {
-        name: formData.name,
-        profession: formData.profession,
-        homeCity: formData.homeCity,
-        homeState: formData.homeState,
-        college: formData.college,
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'profiles'), {
+        ...formData,
         skills: skillList,
         createdAt: Date.now(),
         userId: user.uid
       });
-      setFormData({ 
-        name: '', profession: '', homeCity: '', homeState: '', college: '',
-        skill1: '', skill2: '', skill3: '', skill4: '', skill5: '', skill6: '' 
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSubmitting(false);
-    }
+      setFormData({ name: '', profession: '', homeCity: '', homeState: '', college: '', skill1: '', skill2: '', skill3: '', skill4: '', skill5: '', skill6: '' });
+    } catch (error) { console.error(error); } 
+    finally { setSubmitting(false); }
   };
 
   const confirmDelete = async () => {
@@ -182,29 +188,36 @@ export default function App() {
   const filteredProfiles = useMemo(() => {
     if (!searchQuery.trim()) return profiles;
     const q = searchQuery.toLowerCase();
-    return profiles.filter(p => 
-      p.name?.toLowerCase().includes(q) || 
-      p.profession?.toLowerCase().includes(q) || 
-      p.homeCity?.toLowerCase().includes(q) || 
-      p.homeState?.toLowerCase().includes(q) || 
-      p.college?.toLowerCase().includes(q) || 
-      p.skills?.some(s => s.toLowerCase().includes(q))
-    );
+    return profiles.filter(p => p.name?.toLowerCase().includes(q) || p.profession?.toLowerCase().includes(q) || p.homeCity?.toLowerCase().includes(q) || p.homeState?.toLowerCase().includes(q) || p.college?.toLowerCase().includes(q) || p.skills?.some(s => s.toLowerCase().includes(q)));
   }, [profiles, searchQuery]);
-
-  const getPlaceholder = (num) => {
-    if (num === 1) return "Revelation";
-    if (num === 2) return "Stick Pull";
-    if (num === 3) return "Translating";
-    return "...";
-  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        
+
+        {/* --- INSTALL BANNER --- */}
+        {showInstallBanner && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md bg-blue-600 text-white p-4 rounded-2xl shadow-2xl border border-blue-400 animate-bounce-subtle">
+            <button onClick={() => setShowInstallBanner(false)} className="absolute top-2 right-2 p-1 hover:bg-blue-500 rounded-full transition-colors"><X size={18} /></button>
+            <div className="flex items-center gap-4">
+              <div className="bg-white p-2 rounded-xl text-blue-600 shadow-inner"><Download size={24} /></div>
+              <div className="flex-1">
+                <p className="text-sm font-bold">Install Directory App</p>
+                {platform === 'ios' ? (
+                  <p className="text-[10px] opacity-90">Tap <Share size={12} className="inline mx-1" /> then <PlusSquare size={12} className="inline mx-1" /> "Add to Home Screen"</p>
+                ) : (
+                  <p className="text-[10px] opacity-90">Add this directory to your home screen for easy access.</p>
+                )}
+              </div>
+              {platform === 'android' && (
+                <button onClick={handleAndroidInstall} className="bg-white text-blue-600 px-4 py-2 rounded-lg text-xs font-black shadow-lg hover:bg-slate-50 transition-all">INSTALL</button>
+              )}
+            </div>
+          </div>
+        )}
+
         {deleteId && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
@@ -230,7 +243,6 @@ export default function App() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <div className="flex items-center gap-2 mb-6 text-blue-600"><UserPlus size={20} /><h2 className="text-xl font-bold text-slate-800">Add Profile</h2></div>
@@ -243,41 +255,19 @@ export default function App() {
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Profession</label>
                   <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
                 </div>
-                
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">City</label>
-                    <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Sharon" value={formData.homeCity} onChange={(e) => setFormData({...formData, homeCity: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">State</label>
-                    <select className="w-full px-1 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm" value={formData.homeState} onChange={(e) => setFormData({...formData, homeState: e.target.value})}>
-                      <option value="">--</option>
-                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
+                  <div className="col-span-2"><label className="block text-xs font-bold text-slate-500 mb-1 uppercase">City</label><input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Sharon" value={formData.homeCity} onChange={(e) => setFormData({...formData, homeCity: e.target.value})} /></div>
+                  <div><label className="block text-xs font-bold text-slate-500 mb-1 uppercase">State</label><select className="w-full px-1 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm" value={formData.homeState} onChange={(e) => setFormData({...formData, homeState: e.target.value})}><option value="">--</option>{STATES.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">College</label>
-                  <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="School of the Prophets" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} />
-                </div>
-
+                <div><label className="block text-xs font-bold text-slate-500 mb-1 uppercase">College</label><input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="School of the Prophets" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} /></div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-2 uppercase text-wrap">Hobbies, Interests, & Skills (Fill Any)</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[1, 2, 3, 4, 5, 6].map((num) => (
-                      <input 
-                        key={num}
-                        className="w-full px-3 py-1.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-xs" 
-                        placeholder={getPlaceholder(num)}
-                        value={formData[`skill${num}`]} 
-                        onChange={(e) => setFormData({...formData, [`skill${num}`]: e.target.value})} 
-                      />
+                      <input key={num} className="w-full px-3 py-1.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder={num === 1 ? "Revelation" : num === 2 ? "Stick Pull" : num === 3 ? "Translating" : "..."} value={formData[`skill${num}`]} onChange={(e) => setFormData({...formData, [`skill${num}`]: e.target.value})} />
                     ))}
                   </div>
                 </div>
-
                 <button disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
                   {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Publish Profile'}
                 </button>
@@ -287,21 +277,12 @@ export default function App() {
             <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-700">
               <div className="flex items-center gap-2 mb-6 text-blue-400 font-bold"><Filter size={18} /> Quick Filter</div>
               <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                {[
-                  { label: 'Professions', data: filterStats.professions },
-                  { label: 'Hometowns', data: filterStats.hometowns },
-                  { label: 'Colleges', data: filterStats.colleges },
-                  { label: 'Skills & Hobbies', data: filterStats.skills }
-                ].map(sec => (
+                {[{ label: 'Professions', data: filterStats.professions }, { label: 'Hometowns', data: filterStats.hometowns }, { label: 'Colleges', data: filterStats.colleges }, { label: 'Skills & Hobbies', data: filterStats.skills }].map(sec => (
                   <div key={sec.label} className="mb-4">
                     <p className="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-widest">{sec.label}</p>
                     <div className="flex flex-wrap gap-2">
                       {sec.data.map(([name, count]) => (
-                        <button 
-                          key={name} 
-                          onClick={() => setSearchQuery(name)} 
-                          className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery.toLowerCase() === name.toLowerCase() ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
-                        >
+                        <button key={name} onClick={() => setSearchQuery(name)} className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery.toLowerCase() === name.toLowerCase() ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}>
                           {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
                         </button>
                       ))}
@@ -309,14 +290,7 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')} 
-                  className="mt-6 w-full text-[10px] border border-blue-500/30 text-blue-400 py-3 rounded-lg font-bold hover:bg-blue-500/10 transition-all uppercase tracking-widest"
-                >
-                  Clear All Filters
-                </button>
-              )}
+              {searchQuery && <button onClick={() => setSearchQuery('')} className="mt-6 w-full text-[10px] border border-blue-500/30 text-blue-400 py-3 rounded-lg font-bold hover:bg-blue-500/10 transition-all uppercase tracking-widest">Clear All Filters</button>}
             </div>
           </div>
 
