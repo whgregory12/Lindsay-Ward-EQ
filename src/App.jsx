@@ -120,7 +120,6 @@ export default function App() {
         stats.hometowns[h] = (stats.hometowns[h] || 0) + 1;
       }
       
-      // Collect skills from the array
       if (p.skills && Array.isArray(p.skills)) {
         p.skills.forEach(s => { 
           const cleanedSkill = clean(s);
@@ -143,7 +142,6 @@ export default function App() {
     if (!formData.name || !formData.profession || !user) return;
     setSubmitting(true);
     
-    // Combine individual skills into one array
     const skillList = [
       formData.skill1, formData.skill2, formData.skill3, 
       formData.skill4, formData.skill5, formData.skill6
@@ -193,6 +191,13 @@ export default function App() {
       p.skills?.some(s => s.toLowerCase().includes(q))
     );
   }, [profiles, searchQuery]);
+
+  const getPlaceholder = (num) => {
+    if (num === 1) return "Revelation";
+    if (num === 2) return "Stick Pull";
+    if (num === 3) return "Translating";
+    return "...";
+  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin text-blue-600" /></div>;
 
@@ -259,13 +264,13 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Hobbies & Skills (Fill any)</label>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase text-wrap">Hobbies, Interests, & Skills (Fill Any)</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[1, 2, 3, 4, 5, 6].map((num) => (
                       <input 
                         key={num}
                         className="w-full px-3 py-1.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-xs" 
-                        placeholder={`Skill ${num}`}
+                        placeholder={getPlaceholder(num)}
                         value={formData[`skill${num}`]} 
                         onChange={(e) => setFormData({...formData, [`skill${num}`]: e.target.value})} 
                       />
@@ -273,7 +278,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
+                <button disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
                   {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Publish Profile'}
                 </button>
               </form>
@@ -282,11 +287,11 @@ export default function App() {
             <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-700">
               <div className="flex items-center gap-2 mb-6 text-blue-400 font-bold"><Filter size={18} /> Quick Filter</div>
               <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                
                 {[
                   { label: 'Professions', data: filterStats.professions },
                   { label: 'Hometowns', data: filterStats.hometowns },
-                  { label: 'Colleges', data: filterStats.colleges }
+                  { label: 'Colleges', data: filterStats.colleges },
+                  { label: 'Skills & Hobbies', data: filterStats.skills }
                 ].map(sec => (
                   <div key={sec.label} className="mb-4">
                     <p className="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-widest">{sec.label}</p>
@@ -303,23 +308,7 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-
-                <div>
-                  <p className="text-[10px] text-slate-500 font-black uppercase mb-3 tracking-widest">Skills & Hobbies</p>
-                  <div className="flex flex-wrap gap-2">
-                    {filterStats.skills.map(([name, count]) => (
-                      <button 
-                        key={name} 
-                        onClick={() => setSearchQuery(name)} 
-                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery.toLowerCase() === name.toLowerCase() ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
-                      >
-                        {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
-              
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')} 
@@ -349,7 +338,6 @@ export default function App() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </div>
