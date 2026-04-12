@@ -52,6 +52,12 @@ const STATES = [
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
 ];
 
+// Helper to clean up text (Title Case)
+const clean = (str) => {
+  if (!str) return "";
+  return str.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [profiles, setProfiles] = useState([]);
@@ -65,7 +71,12 @@ export default function App() {
     homeCity: '',
     homeState: '',
     college: '',
-    skills: ''
+    skill1: '',
+    skill2: '',
+    skill3: '',
+    skill4: '',
+    skill5: '',
+    skill6: ''
   });
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,17 +106,29 @@ export default function App() {
   // Generate Filter Tally Stats
   const filterStats = useMemo(() => {
     const stats = { professions: {}, skills: {}, hometowns: {}, colleges: {} };
+    
     profiles.forEach(p => {
-      if (p.profession) stats.professions[p.profession] = (stats.professions[p.profession] || 0) + 1;
-      if (p.college) stats.colleges[p.college] = (stats.colleges[p.college] || 0) + 1;
-      if (p.homeCity && p.homeState) {
-        const h = `${p.homeCity}, ${p.homeState}`;
+      const prof = clean(p.profession);
+      const coll = clean(p.college);
+      const city = clean(p.homeCity);
+      const state = p.homeState;
+
+      if (prof) stats.professions[prof] = (stats.professions[prof] || 0) + 1;
+      if (coll) stats.colleges[coll] = (stats.colleges[coll] || 0) + 1;
+      if (city && state) {
+        const h = `${city}, ${state}`;
         stats.hometowns[h] = (stats.hometowns[h] || 0) + 1;
       }
+      
+      // Collect skills from the array
       if (p.skills && Array.isArray(p.skills)) {
-        p.skills.forEach(s => { stats.skills[s] = (stats.skills[s] || 0) + 1; });
+        p.skills.forEach(s => { 
+          const cleanedSkill = clean(s);
+          if (cleanedSkill) stats.skills[cleanedSkill] = (stats.skills[cleanedSkill] || 0) + 1; 
+        });
       }
     });
+
     const sort = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
     return {
       professions: sort(stats.professions),
@@ -117,17 +140,31 @@ export default function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.profession || !formData.skills || !user) return;
+    if (!formData.name || !formData.profession || !user) return;
     setSubmitting(true);
+    
+    // Combine individual skills into one array
+    const skillList = [
+      formData.skill1, formData.skill2, formData.skill3, 
+      formData.skill4, formData.skill5, formData.skill6
+    ].map(s => s.trim()).filter(s => s !== '');
+
     try {
       const profilesRef = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
       await addDoc(profilesRef, {
-        ...formData,
-        skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== ''),
+        name: formData.name,
+        profession: formData.profession,
+        homeCity: formData.homeCity,
+        homeState: formData.homeState,
+        college: formData.college,
+        skills: skillList,
         createdAt: Date.now(),
         userId: user.uid
       });
-      setFormData({ name: '', profession: '', homeCity: '', homeState: '', college: '', skills: '' });
+      setFormData({ 
+        name: '', profession: '', homeCity: '', homeState: '', college: '',
+        skill1: '', skill2: '', skill3: '', skill4: '', skill5: '', skill6: '' 
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -195,21 +232,21 @@ export default function App() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Full Name</label>
-                  <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Joseph Smith" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                  <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Joseph Smith" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Profession</label>
-                  <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
+                  <input required className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Prophet" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} />
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2">
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">City</label>
-                    <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Sharon" value={formData.homeCity} onChange={(e) => setFormData({...formData, homeCity: e.target.value})} />
+                    <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Sharon" value={formData.homeCity} onChange={(e) => setFormData({...formData, homeCity: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">State</label>
-                    <select className="w-full px-1 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={formData.homeState} onChange={(e) => setFormData({...formData, homeState: e.target.value})}>
+                    <select className="w-full px-1 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm" value={formData.homeState} onChange={(e) => setFormData({...formData, homeState: e.target.value})}>
                       <option value="">--</option>
                       {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -218,12 +255,24 @@ export default function App() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">College</label>
-                  <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="School of the Prophets" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} />
+                  <input className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="School of the Prophets" value={formData.college} onChange={(e) => setFormData({...formData, college: e.target.value})} />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Hobbies & Skills</label>
-                  <textarea required rows="2" className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Revelation, Stick Pull, Translation" value={formData.skills} onChange={(e) => setFormData({...formData, skills: e.target.value})} />
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Hobbies & Skills (Fill any)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2, 3, 4, 5, 6].map((num) => (
+                      <input 
+                        key={num}
+                        className="w-full px-3 py-1.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-xs" 
+                        placeholder={`Skill ${num}`}
+                        value={formData[`skill${num}`]} 
+                        onChange={(e) => setFormData({...formData, [`skill${num}`]: e.target.value})} 
+                      />
+                    ))}
+                  </div>
                 </div>
+
                 <button disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
                   {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Publish Profile'}
                 </button>
@@ -246,7 +295,7 @@ export default function App() {
                         <button 
                           key={name} 
                           onClick={() => setSearchQuery(name)} 
-                          className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
+                          className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery.toLowerCase() === name.toLowerCase() ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
                         >
                           {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
                         </button>
@@ -262,7 +311,7 @@ export default function App() {
                       <button 
                         key={name} 
                         onClick={() => setSearchQuery(name)} 
-                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery === name ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
+                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${searchQuery.toLowerCase() === name.toLowerCase() ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400'}`}
                       >
                         {name} <span className="ml-1 opacity-50 font-mono">({count})</span>
                       </button>
